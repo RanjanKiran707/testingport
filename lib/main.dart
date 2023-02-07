@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui';
 
@@ -11,6 +10,7 @@ import 'package:get/get.dart';
 import "package:image/image.dart" as img;
 import 'package:pretty_qr_code/pretty_qr_code.dart';
 import 'package:screenshot/screenshot.dart';
+import 'package:serial/serial.dart';
 import 'package:test/raster.dart';
 
 void main() {
@@ -53,6 +53,13 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
+          SerialPort? port;
+
+          port = await html.window.navigator.serial.requestPort();
+
+          final writer = port!.writable.writer;
+          await writer.ready;
+
           final qrimage = await ScreenshotController.widgetToUiImage(PrettyQr(
             data: "Ranajn",
             size: 192,
@@ -90,6 +97,12 @@ class _MyHomePageState extends State<MyHomePage> {
           builder.add(data);
           builder.add(pictureEnd.toList());
           builder.add(footer.toList());
+
+          //Send Data
+          await writer.write(builder.toBytes());
+          await writer.ready;
+          await writer.close();
+          await port.close();
 
           debugPrint(hex.encode(builder.toBytes().toList()).length.toString());
         },
